@@ -15,6 +15,7 @@
   "keywords": [
     "node",
     "es6",
+    "heroku",
     "problem",
     "solving"
   ],
@@ -26,6 +27,9 @@
   "homepage": "https://github.com/rhildred/es6test#readme",
   "dependencies": {
     "express": "*"
+  },
+  "engines": {
+    "node": "14.x"
   },
   "babel": {
     "presets": [
