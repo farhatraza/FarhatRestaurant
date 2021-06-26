@@ -1,30 +1,41 @@
 /**
  * Entry point
  */
-$(function(){
+$(function () {
     // gather and display messages sent from a previous session, if any
     var pastMessages = History.get();
-    if(pastMessages !== false){
-        for(var i=0; i<pastMessages.length; i++){
+    if (pastMessages !== false) {
+        for (var i = 0; i < pastMessages.length; i++) {
             print(pastMessages[i].message, pastMessages[i].from);
         }
     }
 
     // get phone number used in a previous session, if any
     var phone = getPhoneNumber();
-    if(phone === false){
+    if (phone === false) {
         phone = makeID();
         localStorage.setItem('fake-number', phone);
     }
 
     // auto focus to the message input, save a click yay
     $('#msg').focus();
+    // socket stuff
+    const socket = io(document.URL);
+    const data = {
+        from: phone
+    };
+    socket.emit('receive message', data);
+    socket.on('receive message', (data) => {
+        // pass strings around
+        History.add(data.message, 'server');
+        print(data.message, 'server');
+    });
 });
 
 /**
  * Click Event - Clear the message box and chat History
  */
-$('#clear').click(function(){
+$('#clear').click(function () {
     localStorage.removeItem('history');
     $('#messages').html('');
 });
@@ -33,25 +44,25 @@ $('#clear').click(function(){
  * Click Event - Send a message by clicking "Send"
  * @param {any} e - Click event
  */
-$('#send').click(function(e){
+$('#send').click(function (e) {
     sendMessage();
 });
 /**
  * Keypress Event - Send a message by pressing "Enter"
  * @param {any} e - Keypress event
  */
-$('#msg').keypress(function(e){
-    if(typeof e !== 'undefined' && e.which == 13){
+$('#msg').keypress(function (e) {
+    if (typeof e !== 'undefined' && e.which == 13) {
         sendMessage();
     }
 })
 /**
  * Aggregate function for sending a message
  */
-function sendMessage(){
+function sendMessage() {
     var msg = $('#msg').val().trim();
 
-    if(msg != ''){
+    if (msg != '') {
         History.add(msg, 'user');
         print(msg, 'user');
         $('#msg').val('').focus();
@@ -63,26 +74,27 @@ function sendMessage(){
  * Send user message, get next story elements from server aka "The Magic Part"
  * @param {string} msg - User message
  */
-function getNextStory(msg){
+function getNextStory(msg) {
     $.post('sms', {
         body: msg,
-        dataType:"xml",
+        dataType: "xml",
         from: getPhoneNumber()
-    }, function(xData, status){
+    }, function (xData, status) {
         // debug, log the status
         console.log('Story: ' + status);
 
         // parse the TwiML server response into simple strings
         var data = $(xData).find("Response").html();
-        try{
-            data = data.split('</Message><Message>');        	
-        }catch(err){
-        	data = [xData.all[0].textContent];
+        try {
+            data = data.split('</Message><Message>');
+        } catch (err) {
+            data = [xData.all[0].textContent];
         }
-        for(var i=0; i<data.length; i++){
+        for (var i = 0; i < data.length; i++) {
             data[i] = data[i].replace(/\<(\/)?Message\>/gi, '');
             data[i] = data[i].replace(/\<(\/)?Response\>/gi, '');
             data[i] = data[i].replace(/([\r\n]+|\%0a+)/g, '<br>');
+            data[i] = linkifyHtml(data[i], { target: "_blank" });
 
             // pass strings around
             History.add(data[i], 'server');
@@ -96,12 +108,12 @@ function getNextStory(msg){
  * @param {string} msg - Message to display
  * @param {string} from - Location message was created (user or server)
  */
-function print(msg, from){
+function print(msg, from) {
     var className = (from == 'server' ? 'from-server' : 'from-user');
     var messages = $('#messages');
 
     messages.append('<li class="' + className + '"><p>' + msg + '</p></li>');
-    messages.animate({scrollTop: messages.prop('scrollHeight')}, 0);
+    messages.animate({ scrollTop: messages.prop('scrollHeight') }, 0);
 }
 
 /*** Helper Functions ***/
@@ -109,10 +121,10 @@ function print(msg, from){
 /**
  * Get the saved phone number if there is one
  */
-function getPhoneNumber(){
+function getPhoneNumber() {
     var phone = localStorage.getItem('fake-number');
 
-    if(typeof phone === 'undefined' || phone == null){
+    if (typeof phone === 'undefined' || phone == null) {
         phone = false;
     }
 
@@ -128,7 +140,7 @@ function makeID() {
     var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
     // generate random id 10 characters long
-    for (var i = 0; i < 10; i++){
+    for (var i = 0; i < 10; i++) {
         id += possible.charAt(Math.floor(Math.random() * possible.length));
     }
 
@@ -144,14 +156,14 @@ var History = {
      * @param {string} msg - Message to add to History
      * @param {string} from - Location message was created (user or server)
      */
-    add: function(msg, from){
+    add: function (msg, from) {
         var pastMessages = History.get();
 
-        if(pastMessages === false){
-            pastMessages = [{message: msg, from: from}];
+        if (pastMessages === false) {
+            pastMessages = [{ message: msg, from: from }];
         }
-        else{
-            pastMessages.push({message: msg, from: from});
+        else {
+            pastMessages.push({ message: msg, from: from });
         }
 
         localStorage.setItem('history', JSON.stringify(pastMessages));
@@ -159,13 +171,13 @@ var History = {
     /**
      * Get all history if any exists
      */
-    get: function(){
+    get: function () {
         var pastMessages = localStorage.getItem('history');
 
-        if(typeof pastMessages !== 'undefined' && pastMessages != null){
+        if (typeof pastMessages !== 'undefined' && pastMessages != null) {
             pastMessages = JSON.parse(pastMessages);
         }
-        else{
+        else {
             pastMessages = false;
         }
 

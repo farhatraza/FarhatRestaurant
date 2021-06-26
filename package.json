@@ -26,7 +26,11 @@
   },
   "homepage": "https://github.com/rhildred/es6test#readme",
   "dependencies": {
-    "express": "*"
+    "engine.io": "^5.1.1",
+    "express": "*",
+    "socket.io": "^4.1.2",
+    "twilio": "^3.64.0",
+    "underscore": "^1.13.1"
   },
   "engines": {
     "node": "14.x"
