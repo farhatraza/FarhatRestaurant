@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/farhatraza/FarhatRestaurant.git"
   },
-  "homepage": "https://github.com/farhatraza/FarhatRestaurant.git",
+  "homepage": "https://github.com/farhatraza/FarhatRestaurant",
   "dependencies": {
     "engine.io": "^5.1.1",
     "express": "*",
